@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STRUCTURE(1) — Stack &amp; Queue Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#050505;
+    --surface:#0e0e0e;
+    --surface-2:#161615;
+    --red:#e4002b;
+    --red-dim: rgba(228,0,43,0.35);
+    --white:#f2f0ea;
+    --grey:#8a8a85;
+    --grey-dim:#55554f;
+    --border:#2a2a28;
+    --dot:#302f2c;
+    --radius:2px;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0; padding:0;
+    background:var(--bg);
+    color:var(--white);
+    font-family:'Space Grotesk', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  body{
+    background-image:
+      radial-gradient(var(--dot) 1px, transparent 1px);
+    background-size: 22px 22px;
+    background-position: -10px -10px;
+    min-height:100vh;
+  }
+
+  ::selection{ background:var(--red); color:var(--white); }
+
+  a{ color:inherit; }
+
+  :focus-visible{
+    outline:2px solid var(--red);
+    outline-offset:3px;
+  }
+
+  .wrap{
+    max-width:1040px;
+    margin:0 auto;
+    padding: 28px 20px 80px;
+  }
+
+  /* ---------- header ---------- */
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding-bottom:22px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:34px;
+    flex-wrap:wrap;
+    gap:14px;
+  }
+
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+
+  .brand-dot{
+    width:11px; height:11px;
+    border-radius:50%;
+    background:var(--red);
+    box-shadow: 0 0 0 3px rgba(228,0,43,0.15), 0 0 10px var(--red);
+    flex-shrink:0;
+    animation: breathe 3.2s ease-in-out infinite;
+  }
+
+  @keyframes breathe{
+    0%,100%{ opacity:1; }
+    50%{ opacity:.35; }
+  }
+
+  .brand-name{
+    font-family:'Silkscreen', monospace;
+    font-size:15px;
+    letter-spacing:2px;
+  }
+
+  .brand-tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--grey);
+    letter-spacing:1px;
+  }
+
+  .model-code{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--grey);
+    border:1px solid var(--border);
+    padding:6px 10px;
+    border-radius:var(--radius);
+    letter-spacing:1px;
+  }
+
+  .model-code b{ color:var(--white); font-weight:500; }
+
+  /* ---------- hero ---------- */
+  .hero{ margin-bottom:36px; }
+
+  .hero h1{
+    font-family:'Silkscreen', monospace;
+    font-weight:700;
+    font-size: clamp(28px, 5vw, 46px);
+    line-height:1.25;
+    margin:0 0 10px;
+    letter-spacing:1px;
+  }
+
+  .hero h1 span{ color:var(--red); }
+
+  .hero p{
+    max-width:560px;
+    color:var(--grey);
+    font-size:14.5px;
+    line-height:1.6;
+    margin:0;
+  }
+
+  /* ---------- tabs ---------- */
+  .tabs{
+    display:flex;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:hidden;
+    margin-bottom:22px;
+  }
+
+  .tab{
+    flex:1;
+    background:var(--surface);
+    color:var(--grey);
+    border:none;
+    border-right:1px solid var(--border);
+    padding:14px 10px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:1.5px;
+    cursor:pointer;
+    text-transform:uppercase;
+    transition: color .15s ease, background .15s ease;
+    position:relative;
+  }
+  .tab:last-child{ border-right:none; }
+
+  .tab .idx{ color:var(--grey-dim); margin-right:6px; }
+
+  .tab.active{
+    color:var(--white);
+    background:var(--surface-2);
+  }
+  .tab.active .idx{ color:var(--red); }
+  .tab.active::after{
+    content:"";
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:2px;
+    background:var(--red);
+  }
+
+  .tab:hover:not(.active){ color:var(--white); }
+
+  /* ---------- panel ---------- */
+  .panel{ display:none; }
+  .panel.active{ display:block; animation: fadein .25s ease; }
+
+  @keyframes fadein{
+    from{ opacity:0; transform:translateY(4px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:22px;
+    margin-bottom:18px;
+  }
+
+  .card-title{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:2px;
+    color:var(--grey);
+    text-transform:uppercase;
+    margin:0 0 16px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .card-title::before{
+    content:"";
+    width:6px; height:6px;
+    background:var(--red);
+    border-radius:50%;
+  }
+
+  /* ---------- controls ---------- */
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    align-items:flex-end;
+  }
+
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+
+  .field label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    letter-spacing:1.5px;
+    color:var(--grey);
+    text-transform:uppercase;
+  }
+
+  .field input{
+    background:var(--bg);
+    border:1px solid var(--border);
+    color:var(--white);
+    font-family:'JetBrains Mono', monospace;
+    font-size:14px;
+    padding:10px 12px;
+    border-radius:var(--radius);
+    width:110px;
+  }
+
+  .field input:focus{ border-color:var(--red); }
+
+  .btn{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    padding:11px 16px;
+    border-radius:var(--radius);
+    border:1px solid var(--border);
+    background:transparent;
+    color:var(--white);
+    cursor:pointer;
+    transition: all .15s ease;
+    white-space:nowrap;
+  }
+
+  .btn:hover{ border-color:var(--white); }
+  .btn:active{ transform:translateY(1px); }
+
+  .btn:disabled{
+    opacity:.3;
+    cursor:not-allowed;
+  }
+  .btn:disabled:hover{ border-color:var(--border); }
+
+  .btn-primary{
+    background:var(--red);
+    border-color:var(--red);
+    color:var(--white);
+  }
+  .btn-primary:hover{ background:#c40026; border-color:#c40026; }
+
+  .btn-ghost{ color:var(--grey); }
+  .btn-ghost:hover{ color:var(--white); }
+
+  .spacer{ flex:1 1 auto; min-width:8px; }
+
+  /* ---------- visualization ---------- */
+  .viz{
+    min-height:180px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:22px;
+    padding:26px 10px;
+  }
+
+  .linear-track{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+
+  .cell{
+    position:relative;
+    width:56px; height:56px;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    background:var(--bg);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'JetBrains Mono', monospace;
+    font-size:14px;
+    color:var(--grey-dim);
+    flex-shrink:0;
+    transition: border-color .2s ease, color .2s ease, background .2s ease;
+  }
+
+  .cell::before, .cell::after{
+    content:"";
+    position:absolute;
+    width:3px; height:3px;
+    background:var(--border);
+    border-radius:50%;
+  }
+  .cell::before{ top:4px; left:4px; }
+  .cell::after{ bottom:4px; right:4px; }
+
+  .cell.filled{
+    color:var(--white);
+    border-color:var(--grey-dim);
+  }
+
+  .cell.used{
+    border-style:dashed;
+    color:var(--grey-dim);
+    background: repeating-linear-gradient(135deg, var(--surface-2), var(--surface-2) 4px, var(--surface) 4px, var(--surface) 8px);
+  }
+
+  .cell.pointer-top, .cell.pointer-front, .cell.pointer-rear, .cell.pointer-both{
+    border-color:var(--red);
+    box-shadow: 0 0 0 1px var(--red), 0 0 14px rgba(228,0,43,0.35);
+  }
+
+  .cell .tag{
+    position:absolute;
+    top:-22px;
+    left:50%;
+    transform:translateX(-50%);
+    font-family:'JetBrains Mono', monospace;
+    font-size:9px;
+    letter-spacing:1px;
+    color:var(--red);
+    white-space:nowrap;
+  }
+  .cell .idx-tag{
+    position:absolute;
+    bottom:-18px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:9px;
+    color:var(--grey-dim);
+  }
+
+  .led{
+    width:7px; height:7px;
+    border-radius:50%;
+    background:var(--red);
+    box-shadow:0 0 8px var(--red);
+    animation: breathe 1.6s ease-in-out infinite;
+  }
+
+  /* ---------- circular viz ---------- */
+  .ring-wrap{
+    position:relative;
+    width:260px; height:260px;
+  }
+  .ring-outline{
+    position:absolute;
+    inset:0;
+    border:1px dashed var(--border);
+    border-radius:50%;
+  }
+  .ring-wrap .cell{
+    position:absolute;
+    width:50px; height:50px;
+    margin:-25px;
+  }
+  .ring-center{
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    text-align:center;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .ring-center .cap{
+    font-family:'Silkscreen', monospace;
+    font-size:20px;
+    color:var(--white);
+  }
+  .ring-center .lbl{
+    font-size:9px;
+    letter-spacing:1.5px;
+    color:var(--grey);
+    margin-top:4px;
+  }
+
+  /* ---------- status row ---------- */
+  .status-row{
+    display:flex;
+    gap:22px;
+    flex-wrap:wrap;
+    justify-content:center;
+    border-top:1px solid var(--border);
+    padding-top:16px;
+    margin-top:6px;
+    width:100%;
+  }
+  .status-item{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--grey);
+    letter-spacing:.5px;
+  }
+  .status-item b{
+    color:var(--white);
+    font-weight:500;
+  }
+  .status-item.warn b{ color:var(--red); }
+
+  .empty-msg{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--grey-dim);
+    letter-spacing:1px;
+    text-align:center;
+  }
+
+  /* ---------- log console ---------- */
+  .console{
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    height:150px;
+    overflow-y:auto;
+    padding:12px 14px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11.5px;
+    line-height:1.9;
+  }
+  .console .line{ color:var(--grey); white-space:pre-wrap; }
+  .console .line .prompt{ color:var(--red); margin-right:6px; }
+  .console .line.err .prompt{ color:var(--red); }
+  .console .line.ok .prompt{ color:var(--grey-dim); }
+  .console::-webkit-scrollbar{ width:6px; }
+  .console::-webkit-scrollbar-thumb{ background:var(--border); }
+
+  footer{
+    margin-top:40px;
+    padding-top:18px;
+    border-top:1px solid var(--border);
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    color:var(--grey-dim);
+    letter-spacing:1px;
+    text-align:center;
+  }
+
+  @media (max-width: 560px){
+    .tabs{ flex-direction:column; }
+    .tab{ border-right:none; border-bottom:1px solid var(--border); }
+    .controls{ flex-direction:column; align-items:stretch; }
+    .field input{ width:100%; }
+    .btn{ width:100%; }
+    .spacer{ display:none; }
+    .ring-wrap{ transform:scale(0.85); }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <div>
+        <div class="brand-name">STRUCTURE(1)</div>
+        <div class="brand-tag">DATA STRUCTURE SIMULATOR</div>
+      </div>
+    </div>
+    <div class="model-code">MODEL <b>STK / LQ / CQ</b> — REV.01</div>
+  </header>
+
+  <div class="hero">
+    <h1>SEE HOW IT <span>QUEUES.</span></h1>
+    <p>A transparent look at three ways data waits in line. Set a capacity, add elements — typed or random — and watch the pointers move.</p>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tab="stack" role="tab"><span class="idx">01</span>Stack</button>
+    <button class="tab" data-tab="linear" role="tab"><span class="idx">02</span>Linear Queue</button>
+    <button class="tab" data-tab="circular" role="tab"><span class="idx">03</span>Circular Queue</button>
+  </div>
+
+  <!-- ===================== STACK ===================== -->
+  <section class="panel active" id="panel-stack">
+    <div class="card">
+      <p class="card-title">Configure</p>
+      <div class="controls">
+        <div class="field">
+          <label for="stack-capacity">Capacity</label>
+          <input type="number" id="stack-capacity" min="1" max="12" value="6">
+        </div>
+        <button class="btn" id="stack-set">Set size</button>
+        <div class="spacer"></div>
+        <div class="field">
+          <label for="stack-value">Value</label>
+          <input type="number" id="stack-value" placeholder="e.g. 42">
+        </div>
+        <button class="btn btn-ghost" id="stack-random">Random</button>
+        <button class="btn btn-primary" id="stack-push">Push</button>
+        <button class="btn" id="stack-pop">Pop</button>
+        <button class="btn btn-ghost" id="stack-reset">Reset</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="card-title">Visualize — last in, first out</p>
+      <div class="viz" id="stack-viz"></div>
+      <div class="status-row" id="stack-status"></div>
+    </div>
+  </section>
+
+  <!-- ===================== LINEAR QUEUE ===================== -->
+  <section class="panel" id="panel-linear">
+    <div class="card">
+      <p class="card-title">Configure</p>
+      <div class="controls">
+        <div class="field">
+          <label for="linear-capacity">Capacity</label>
+          <input type="number" id="linear-capacity" min="1" max="12" value="6">
+        </div>
+        <button class="btn" id="linear-set">Set size</button>
+        <div class="spacer"></div>
+        <div class="field">
+          <label for="linear-value">Value</label>
+          <input type="number" id="linear-value" placeholder="e.g. 42">
+        </div>
+        <button class="btn btn-ghost" id="linear-random">Random</button>
+        <button class="btn btn-primary" id="linear-enqueue">Enqueue</button>
+        <button class="btn" id="linear-dequeue">Dequeue</button>
+        <button class="btn btn-ghost" id="linear-reset">Reset</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="card-title">Visualize — first in, first out, fixed slots</p>
+      <div class="viz" id="linear-viz"></div>
+      <div class="status-row" id="linear-status"></div>
+    </div>
+  </section>
+
+  <!-- ===================== CIRCULAR QUEUE ===================== -->
+  <section class="panel" id="panel-circular">
+    <div class="card">
+      <p class="card-title">Configure</p>
+      <div class="controls">
+        <div class="field">
+          <label for="circular-capacity">Capacity</label>
+          <input type="number" id="circular-capacity" min="1" max="12" value="6">
+        </div>
+        <button class="btn" id="circular-set">Set size</button>
+        <div class="spacer"></div>
+        <div class="field">
+          <label for="circular-value">Value</label>
+          <input type="number" id="circular-value" placeholder="e.g. 42">
+        </div>
+        <button class="btn btn-ghost" id="circular-random">Random</button>
+        <button class="btn btn-primary" id="circular-enqueue">Enqueue</button>
+        <button class="btn" id="circular-dequeue">Dequeue</button>
+        <button class="btn btn-ghost" id="circular-reset">Reset</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="card-title">Visualize — first in, first out, slots reused</p>
+      <div class="viz" id="circular-viz"></div>
+      <div class="status-row" id="circular-status"></div>
+    </div>
+  </section>
+
+  <div class="card">
+    <p class="card-title">Log</p>
+    <div class="console" id="console" aria-live="polite"></div>
+  </div>
+
+  <footer>STRUCTURE(1) — NOT AFFILIATED WITH NOTHING TECHNOLOGY LIMITED — VISUAL LANGUAGE TRIBUTE ONLY</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const MAX_CAP = 12;
+
+  /* ---------------- shared log ---------------- */
+  const consoleEl = document.getElementById('console');
+  function log(msg, type){
+    const line = document.createElement('div');
+    line.className = 'line' + (type ? ' ' + type : '');
+    const time = new Date().toLocaleTimeString('en-GB', {hour12:false});
+    line.innerHTML = '<span class="prompt">' + time + '</span>' + msg;
+    consoleEl.appendChild(line);
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+  }
+
+  function randomValue(){
+    return Math.floor(Math.random() * 899) + 100; // 100-998, reads well in cells
+  }
+
+  function clampCapacity(n){
+    if (isNaN(n)) return 6;
+    return Math.min(MAX_CAP, Math.max(1, Math.floor(n)));
+  }
+
+  /* ---------------- tabs ---------------- */
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.panel');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  /* ==================================================
+     STACK
+  ================================================== */
+  const stack = { capacity: 6, data: [] };
+
+  function renderStack(){
+    const viz = document.getElementById('stack-viz');
+    viz.innerHTML = '';
+    const track = document.createElement('div');
+    track.className = 'linear-track';
+
+    if (stack.capacity === 0) {
+      viz.appendChild(track);
+      return;
+    }
+
+    for (let i = 0; i < stack.capacity; i++){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      const filled = i < stack.data.length;
+      if (filled){
+        cell.classList.add('filled');
+        cell.textContent = stack.data[i];
+      }
+      if (i === stack.data.length - 1){
+        cell.classList.add('pointer-top');
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = 'TOP';
+        cell.appendChild(tag);
+      }
+      const idxTag = document.createElement('span');
+      idxTag.className = 'idx-tag';
+      idxTag.textContent = i;
+      cell.appendChild(idxTag);
+      track.appendChild(cell);
+    }
+    viz.appendChild(track);
+  }
+
+  function renderStackStatus(){
+    const el = document.getElementById('stack-status');
+    const full = stack.data.length === stack.capacity;
+    const empty = stack.data.length === 0;
+    el.innerHTML = `
+      <span class="status-item">SIZE <b>${stack.data.length} / ${stack.capacity}</b></span>
+      <span class="status-item">TOP INDEX <b>${empty ? '—' : stack.data.length - 1}</b></span>
+      <span class="status-item ${full ? 'warn' : ''}">${full ? 'STACK FULL' : empty ? 'STACK EMPTY' : 'READY'}</span>
+    `;
+  }
+
+  function stackFullRender(){ renderStack(); renderStackStatus(); }
+
+  document.getElementById('stack-set').addEventListener('click', () => {
+    const cap = clampCapacity(parseInt(document.getElementById('stack-capacity').value, 10));
+    document.getElementById('stack-capacity').value = cap;
+    stack.capacity = cap;
+    stack.data = [];
+    log(`STACK CAPACITY SET TO <b>${cap}</b>`, 'ok');
+    stackFullRender();
+  });
+
+  document.getElementById('stack-random').addEventListener('click', () => {
+    document.getElementById('stack-value').value = randomValue();
+  });
+
+  document.getElementById('stack-push').addEventListener('click', () => {
+    const valInput = document.getElementById('stack-value');
+    let val = valInput.value.trim();
+    if (val === '') val = randomValue();
+    if (stack.data.length >= stack.capacity){
+      log(`OVERFLOW — STACK IS FULL AT CAPACITY ${stack.capacity}`, 'err');
+      stackFullRender();
+      return;
+    }
+    stack.data.push(val);
+    log(`PUSH <b>${val}</b> — NEW TOP AT INDEX ${stack.data.length - 1}`);
+    valInput.value = '';
+    stackFullRender();
+  });
+
+  document.getElementById('stack-pop').addEventListener('click', () => {
+    if (stack.data.length === 0){
+      log('UNDERFLOW — STACK IS EMPTY', 'err');
+      stackFullRender();
+      return;
+    }
+    const val = stack.data.pop();
+    log(`POP <b>${val}</b> — REMOVED FROM TOP`);
+    stackFullRender();
+  });
+
+  document.getElementById('stack-reset').addEventListener('click', () => {
+    stack.data = [];
+    log('STACK RESET', 'ok');
+    stackFullRender();
+  });
+
+  /* ==================================================
+     LINEAR QUEUE — fixed front/rear, no wraparound
+  ================================================== */
+  const linear = { capacity: 6, data: [], front: -1, rear: -1 };
+
+  function linearReset(cap){
+    linear.capacity = cap;
+    linear.data = new Array(cap).fill(null);
+    linear.front = -1;
+    linear.rear = -1;
+  }
+
+  function renderLinear(){
+    const viz = document.getElementById('linear-viz');
+    viz.innerHTML = '';
+    const track = document.createElement('div');
+    track.className = 'linear-track';
+
+    for (let i = 0; i < linear.capacity; i++){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      const occupied = linear.front !== -1 && i >= linear.front && i <= linear.rear;
+      const used = linear.front !== -1 && i < linear.front;
+
+      if (occupied){
+        cell.classList.add('filled');
+        cell.textContent = linear.data[i];
+      } else if (used){
+        cell.classList.add('used');
+      }
+
+      if (i === linear.front && i === linear.rear && occupied){
+        cell.classList.add('pointer-both');
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = 'FRONT / REAR';
+        cell.appendChild(tag);
+      } else if (i === linear.front && occupied){
+        cell.classList.add('pointer-front');
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = 'FRONT';
+        cell.appendChild(tag);
+      } else if (i === linear.rear && occupied){
+        cell.classList.add('pointer-rear');
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = 'REAR';
+        cell.appendChild(tag);
+      }
+
+      const idxTag = document.createElement('span');
+      idxTag.className = 'idx-tag';
+      idxTag.textContent = i;
+      cell.appendChild(idxTag);
+
+      track.appendChild(cell);
+    }
+    viz.appendChild(track);
+  }
+
+  function renderLinearStatus(){
+    const el = document.getElementById('linear-status');
+    const count = linear.front === -1 ? 0 : (linear.rear - linear.front + 1);
+    const rearMaxed = linear.rear === linear.capacity - 1;
+    el.innerHTML = `
+      <span class="status-item">SIZE <b>${count} / ${linear.capacity}</b></span>
+      <span class="status-item">FRONT <b>${linear.front === -1 ? '—' : linear.front}</b></span>
+      <span class="status-item">REAR <b>${linear.rear === -1 ? '—' : linear.rear}</b></span>
+      <span class="status-item ${rearMaxed ? 'warn' : ''}">${rearMaxed ? 'REAR AT LAST SLOT' : count === 0 ? 'QUEUE EMPTY' : 'READY'}</span>
+    `;
+  }
+
+  function linearFullRender(){ renderLinear(); renderLinearStatus(); }
+
+  document.getElementById('linear-set').addEventListener('click', () => {
+    const cap = clampCapacity(parseInt(document.getElementById('linear-capacity').value, 10));
+    document.getElementById('linear-capacity').value = cap;
+    linearReset(cap);
+    log(`LINEAR QUEUE CAPACITY SET TO <b>${cap}</b>`, 'ok');
+    linearFullRender();
+  });
+
+  document.getElementById('linear-random').addEventListener('click', () => {
+    document.getElementById('linear-value').value = randomValue();
+  });
+
+  document.getElementById('linear-enqueue').addEventListener('click', () => {
+    const valInput = document.getElementById('linear-value');
+    let val = valInput.value.trim();
+    if (val === '') val = randomValue();
+
+    if (linear.rear === linear.capacity - 1){
+      log(`OVERFLOW — REAR HAS REACHED THE LAST SLOT (INDEX ${linear.capacity - 1}), EVEN IF EARLIER SLOTS ARE FREE`, 'err');
+      linearFullRender();
+      return;
+    }
+    linear.rear++;
+    if (linear.front === -1) linear.front = 0;
+    linear.data[linear.rear] = val;
+    log(`ENQUEUE <b>${val}</b> AT INDEX ${linear.rear}`);
+    valInput.value = '';
+    linearFullRender();
+  });
+
+  document.getElementById('linear-dequeue').addEventListener('click', () => {
+    if (linear.front === -1 || linear.front > linear.rear){
+      log('UNDERFLOW — QUEUE IS EMPTY', 'err');
+      linearFullRender();
+      return;
+    }
+    const val = linear.data[linear.front];
+    log(`DEQUEUE <b>${val}</b> FROM INDEX ${linear.front} — SLOT NOW UNUSABLE UNTIL RESET`);
+    linear.data[linear.front] = null;
+    if (linear.front === linear.rear){
+      linear.front = -1;
+      linear.rear = -1;
+    } else {
+      linear.front++;
+    }
+    linearFullRender();
+  });
+
+  document.getElementById('linear-reset').addEventListener('click', () => {
+    linearReset(linear.capacity);
+    log('LINEAR QUEUE RESET', 'ok');
+    linearFullRender();
+  });
+
+  /* ==================================================
+     CIRCULAR QUEUE — front/rear wrap using modulo
+  ================================================== */
+  const circular = { capacity: 6, data: [], front: -1, rear: -1, count: 0 };
+
+  function circularReset(cap){
+    circular.capacity = cap;
+    circular.data = new Array(cap).fill(null);
+    circular.front = -1;
+    circular.rear = -1;
+    circular.count = 0;
+  }
+
+  function renderCircular(){
+    const wrap = document.getElementById('circular-viz');
+    wrap.innerHTML = '';
+
+    const ring = document.createElement('div');
+    ring.className = 'ring-wrap';
+    const outline = document.createElement('div');
+    outline.className = 'ring-outline';
+    ring.appendChild(outline);
+
+    const radius = 100;
+    const n = circular.capacity;
+    for (let i = 0; i < n; i++){
+      const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+      const x = 130 + radius * Math.cos(angle);
+      const y = 130 + radius * Math.sin(angle);
+
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.style.left = x + 'px';
+      cell.style.top = y + 'px';
+
+      const occupied = circular.data[i] !== null && circular.data[i] !== undefined;
+      if (occupied){
+        cell.classList.add('filled');
+        cell.textContent = circular.data[i];
+      }
+
+      const isFront = i === circular.front && circular.count > 0;
+      const isRear = i === circular.rear && circular.count > 0;
+
+      if (isFront && isRear){
+        cell.classList.add('pointer-both');
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = 'F/R';
+        cell.appendChild(tag);
+      } else if (isFront){
+        cell.classList.add('pointer-front');
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = 'FRONT';
+        cell.appendChild(tag);
+      } else if (isRear){
+        cell.classList.add('pointer-rear');
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = 'REAR';
+        cell.appendChild(tag);
+      }
+
+      const idxTag = document.createElement('span');
+      idxTag.className = 'idx-tag';
+      idxTag.textContent = i;
+      cell.appendChild(idxTag);
+
+      ring.appendChild(cell);
+    }
+
+    const center = document.createElement('div');
+    center.className = 'ring-center';
+    center.innerHTML = `<div class="cap">${circular.count}/${circular.capacity}</div><div class="lbl">FILLED</div>`;
+    ring.appendChild(center);
+
+    wrap.appendChild(ring);
+  }
+
+  function renderCircularStatus(){
+    const el = document.getElementById('circular-status');
+    const full = circular.count === circular.capacity;
+    el.innerHTML = `
+      <span class="status-item">SIZE <b>${circular.count} / ${circular.capacity}</b></span>
+      <span class="status-item">FRONT <b>${circular.front === -1 ? '—' : circular.front}</b></span>
+      <span class="status-item">REAR <b>${circular.rear === -1 ? '—' : circular.rear}</b></span>
+      <span class="status-item ${full ? 'warn' : ''}">${full ? 'QUEUE FULL' : circular.count === 0 ? 'QUEUE EMPTY' : 'READY'}</span>
+    `;
+  }
+
+  function circularFullRender(){ renderCircular(); renderCircularStatus(); }
+
+  document.getElementById('circular-set').addEventListener('click', () => {
+    const cap = clampCapacity(parseInt(document.getElementById('circular-capacity').value, 10));
+    document.getElementById('circular-capacity').value = cap;
+    circularReset(cap);
+    log(`CIRCULAR QUEUE CAPACITY SET TO <b>${cap}</b>`, 'ok');
+    circularFullRender();
+  });
+
+  document.getElementById('circular-random').addEventListener('click', () => {
+    document.getElementById('circular-value').value = randomValue();
+  });
+
+  document.getElementById('circular-enqueue').addEventListener('click', () => {
+    const valInput = document.getElementById('circular-value');
+    let val = valInput.value.trim();
+    if (val === '') val = randomValue();
+
+    if (circular.count === circular.capacity){
+      log(`OVERFLOW — CIRCULAR QUEUE IS FULL AT CAPACITY ${circular.capacity}`, 'err');
+      circularFullRender();
+      return;
+    }
+    circular.rear = (circular.rear + 1) % circular.capacity;
+    circular.data[circular.rear] = val;
+    if (circular.front === -1) circular.front = circular.rear;
+    circular.count++;
+    log(`ENQUEUE <b>${val}</b> AT INDEX ${circular.rear}`);
+    valInput.value = '';
+    circularFullRender();
+  });
+
+  document.getElementById('circular-dequeue').addEventListener('click', () => {
+    if (circular.count === 0){
+      log('UNDERFLOW — CIRCULAR QUEUE IS EMPTY', 'err');
+      circularFullRender();
+      return;
+    }
+    const val = circular.data[circular.front];
+    log(`DEQUEUE <b>${val}</b> FROM INDEX ${circular.front} — SLOT REUSABLE NOW`);
+    circular.data[circular.front] = null;
+    circular.front = (circular.front + 1) % circular.capacity;
+    circular.count--;
+    if (circular.count === 0){
+      circular.front = -1;
+      circular.rear = -1;
+    }
+    circularFullRender();
+  });
+
+  document.getElementById('circular-reset').addEventListener('click', () => {
+    circularReset(circular.capacity);
+    log('CIRCULAR QUEUE RESET', 'ok');
+    circularFullRender();
+  });
+
+  /* ---------------- init ---------------- */
+  linearReset(6);
+  circularReset(6);
+  stackFullRender();
+  linearFullRender();
+  circularFullRender();
+  log('SIMULATOR READY — SET A CAPACITY TO BEGIN', 'ok');
+
+})();
+</script>
+
+</body>
+</html>
